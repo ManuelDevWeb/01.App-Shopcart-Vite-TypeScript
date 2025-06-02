@@ -1,35 +1,99 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from "react";
+import { Header } from "./components/Header";
+import { Videogame } from "./components/Videogame";
+import { videogames } from "./helpers/videogames";
 
-function App() {
-  const [count, setCount] = useState(0)
+export function App() {
+  const initialCart = () => {
+    const localStorageCart = localStorage.getItem("cart");
+    return localStorageCart ? JSON.parse(localStorageCart) : [];
+  }
 
+  const [data] = useState(videogames);
+  const [cart, setCart] = useState(initialCart);
+
+  const MAX_QUANTITY = 6;
+  const MIN_QUANTITY = 1;
+
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
+
+  const handleAddToCart = (item) => {
+    const indexItem = cart.findIndex(product => product.id === item.id);
+
+    if(indexItem >= 0){
+      const updatedCart = [...cart];
+      updatedCart[indexItem].quantity += 1;
+      setCart(updatedCart);
+    }else{
+      item.quantity = 1;
+      setCart([...cart, item]);
+    }
+    
+  }
+
+  const handleRemoveFromCart = (id) => {
+    const updatedCart = cart.filter(item => item.id !== id);
+    setCart(updatedCart);
+  }
+
+  const handleClearCart = () => {
+    setCart([]);
+  }
+
+  const handleIncreaseQuantity = (id) => {
+    const updatedCart = cart.map(item => {
+      if(item.id === id && item.quantity < MAX_QUANTITY){
+        item.quantity += 1;
+      }
+      return item;
+    })
+    setCart(updatedCart);
+  }
+
+  const handleDecreaseQuantity = (id) => {
+    const updatedCart = cart.map(item => {
+      if(item.id === id && item.quantity >= MIN_QUANTITY){
+        item.quantity -= 1;
+      }
+      return item;
+    })
+    setCart(updatedCart);
+  }
+  
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <>      
+      <Header 
+        cart={cart} 
+        handleClearCart={handleClearCart} 
+        handleRemoveFromCart={handleRemoveFromCart}
+        handleIncreaseQuantity={handleIncreaseQuantity}
+        handleDecreaseQuantity={handleDecreaseQuantity}
+      />
+      <main className="container-xl mt-5">
+        <h2 className="text-center">Nuestra Colección</h2>
 
-export default App
+        <div className="row mt-5">
+          {
+            data.map(videogame => (
+              <Videogame
+                key={videogame.id}
+                videogame={videogame}
+                handleAddToCart={handleAddToCart}
+              />
+            ))
+          }
+        </div>
+      </main>
+
+      <footer className="bg-dark mt-5 py-5">
+        <div className="container-xl">
+          <p className="text-white text-center fs-4 mt-4 m-md-0">
+            Gamezone - Todos los derechos Reservados
+          </p>
+        </div>
+      </footer>
+    </>
+  );
+}
